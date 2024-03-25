@@ -1,6 +1,8 @@
 #include <iostream>
 #include <string.h>
 #include "../include/inputHandler.hpp"
+#include "../include/constants.hpp"
+#include "../include/query.hpp"
 
 void prompt()
 {
@@ -10,20 +12,37 @@ void prompt()
 int main(int argc, char const *argv[])
 {
     InputHandler inputHandler;
+
     while (true)
     {
         prompt();
         inputHandler.readInput();
+        Query query(inputHandler);
 
-        if (strcmp(inputHandler.getBuf(), ".exit") == 0)
+        if (inputHandler.getBuf()[0] == '.')
         {
-            std::cout << "Exiting from DB.\nThank you for using.\n";
-            exit(EXIT_SUCCESS);
+            switch (query.processMetaCommand())
+            {
+            case (META_COMMAND_SUCCESS):
+                continue;
+            case (META_COMMAND_UNRECOGNIZED_COMMAND):
+                std ::cout << "Unrecognized command" << inputHandler.getBuf() << std::endl;
+                continue;
+            }
         }
-        else
+
+        switch (query.preProcessQuery())
         {
-            std ::cout << "Unrecognized command" << inputHandler.getBuf() << std::endl;
+        case (QUERY_SUCCESS):
+            break;
+        case (QUERY_UNRECOGNIZED):
+            std::cout << "Unrecognized keyword at start of " << inputHandler.getBuf() << std::endl;
+            continue;
         }
+
+        query.execute();
+        printf("Executed.\n");
     }
+
     return 0;
 }

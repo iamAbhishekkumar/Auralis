@@ -1,5 +1,5 @@
-#ifndef INPUT_HANDLER
-#define INPUT_HANDLER
+#ifndef INPUT_HANDLER_H
+#define INPUT_HANDLER_H
 
 #include <iostream>
 

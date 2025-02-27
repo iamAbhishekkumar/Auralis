@@ -1,2 +1,2 @@
 # NexisDB
-A simple database.
+A simple in memory database.

@@ -1,5 +1,5 @@
 BUILD_DIR := build
-OUTPUT := $(BUILD_DIR)/nexis-cli.exe
+OUTPUT := $(BUILD_DIR)/nexis-server.exe
 SRC := cmd/main.go
 
 .PHONY: all clean

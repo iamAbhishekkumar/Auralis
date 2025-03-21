@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"net"
 	"os"
 )
@@ -27,16 +28,21 @@ func main() {
 
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
+	fmt.Println("Accepted Connection from ", conn.RemoteAddr())
 	buffer := make([]byte, 1024)
 	for {
 		// Read data from the client
 		n, err := conn.Read(buffer)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %s", err)
+			if err == io.EOF {
+				fmt.Println("Client disconnected gracefully")
+			} else {
+				fmt.Fprintf(os.Stderr, "Error: %s", err)
+			}
 			return
 		}
-		if bytes.Equal([]byte("*1\\r\\n$4\\r\\nPING\\r\\n"), buffer[:n-1]) {
-			pong := []byte("+PONG\\r\\n")
+		if bytes.Equal([]byte("*1\r\n$4\r\nPING\r\n"), buffer[:n]) {
+			pong := []byte("+PONG\r\n")
 			conn.Write(pong)
 		}
 	}

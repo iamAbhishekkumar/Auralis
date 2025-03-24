@@ -9,34 +9,37 @@ import (
 )
 
 func main() {
+	if len(os.Args) < 2 {
+		fmt.Fprintln(os.Stderr, "No command provided")
+		return
+	}
+
 	conn, err := net.Dial("tcp", "127.0.0.1:6379")
 	if err != nil {
 		fmt.Fprint(os.Stderr, "Failed to bind to port 6379")
 		os.Exit(1)
 	}
 
-	defer conn.Close()
+	defer conn.(*net.TCPConn).CloseWrite()
 
-	var cmd string
-	if len(os.Args) > 1 {
-		cmd = os.Args[1]
-		if cmd == "PING" {
-			cmd = "*1\r\n$4\r\nPING\r\n"
-		} else if cmd == "ECHO" {
-			if len(os.Args) > 2 {
-				text := os.Args[2]
-				WriteStringToConn(conn, text)
-
-			} else {
-				fmt.Fprint(os.Stderr, "Empty Echo Message")
-			}
-
-		}
-		_, err := conn.Write([]byte(cmd))
+	cmd := os.Args[1]
+	switch cmd {
+	case "PING":
+		_, err = conn.Write([]byte("*1\r\n$4\r\nPING\r\n"))
 		if err != nil {
 			fmt.Fprint(os.Stderr, "Failed to send the data")
 		}
-		conn.(*net.TCPConn).CloseWrite()
+	case "ECHO":
+		if len(os.Args) > 2 {
+			text := os.Args[2]
+			WriteStringToConn(conn, text)
+		} else {
+			fmt.Fprintln(os.Stderr, "Empty Echo Message")
+			return
+		}
+	default:
+		fmt.Fprintln(os.Stderr, "Unknown command")
+		return
 	}
 	readedText := ReadStringFromConn(conn)
 	fmt.Println(readedText)

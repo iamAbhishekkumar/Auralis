@@ -41,10 +41,16 @@ func handleConnection(conn net.Conn) {
 			}
 			return
 		}
-		if bytes.Equal([]byte("*1\r\n$4\r\nPING\r\n"), buffer[:n]) {
-			pong := []byte("+PONG\r\n")
-			conn.Write(pong)
-		}
-	}
 
+		cmdExecutor(buffer[:n])
+	}
+}
+
+func cmdExecutor(conn net.Conn, buf []byte) {
+	if bytes.Equal([]byte("*1\r\n+PING\r\n"), buf) {
+		pong := []byte("+PONG\r\n")
+		conn.Write(pong)
+	} else if bytes.Equal([]byte("ECHO")) {
+		// todo
+	}
 }

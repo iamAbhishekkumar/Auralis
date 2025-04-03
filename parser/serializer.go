@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 )
 
 // Nexis Serialization Protocol
@@ -28,15 +30,46 @@ func (ss *simpleString) Deserialize() {
 	}
 }
 
-type bulkString struct {
+type BulkString struct {
 	text []byte
 }
 
-func (ss *bulkString) Serialize() {
-	prefix := append(append([]byte("$"), []byte(string(len(ss.text)))...), '\r', 'n')
-	ss.text = append(append(prefix, ss.text...), '\r', '\n')
+func (ss *BulkString) Serialize() {
+	buf := make([]byte, 0, len(ss.text)+10)
+	buf = append(buf, '$')
+	buf = append(buf, []byte(strconv.Itoa(len(ss.text)))...)
+	buf = append(buf, '\r', '\n')
+	buf = append(buf, ss.text...)
+	buf = append(buf, '\r', '\n')
+	ss.text = buf
 }
 
-func (ss *bulkString) Deserialize() {
-	// TODO
+func (ss *BulkString) Deserialize() {
+	value := string(ss.text)
+	if !strings.HasPrefix(value, "$") {
+		fmt.Fprintln(os.Stderr, "invalid bulk string: missing $ prefix")
+	}
+
+	// Find first CRLF (after length prefix)
+	crlfIndex := strings.Index(value, "\r\n")
+	if crlfIndex == -1 {
+		fmt.Fprintln(os.Stderr, "invalid bulk string: missing CRLF after length")
+	}
+
+	length, err := strconv.Atoi(value[1:crlfIndex])
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "invalid bulk string length")
+	}
+	if length == -1 {
+		ss.text = nil
+	}
+
+	start := crlfIndex + 2
+	end := start + length
+
+	if len(value) < end+2 || value[end:end+2] != "\r\n" {
+		fmt.Fprintln(os.Stderr, "invalid bulk string: data length mismatch or missing CRLF at end")
+	}
+
+	ss.text = []byte(value[start:end])
 }

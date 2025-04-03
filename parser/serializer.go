@@ -14,15 +14,15 @@ type Nesp interface {
 	Deserialzie()
 }
 
-type simpleString struct {
+type SimpleString struct {
 	text []byte
 }
 
-func (ss *simpleString) Serialize() {
+func (ss *SimpleString) Serialize() {
 	ss.text = append(append([]byte("+"), ss.text...), '\r', '\n')
 }
 
-func (ss *simpleString) Deserialize() {
+func (ss *SimpleString) Deserialize() {
 	if bytes.HasPrefix(ss.text, []byte("+")) {
 		ss.text = ss.text[1 : len(ss.text)-2]
 	} else {

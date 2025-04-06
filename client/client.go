@@ -2,10 +2,13 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
 	"os"
+
+	"github.com/iamAbhishekkumar/NexisDB/nesp"
 )
 
 func main() {
@@ -31,15 +34,17 @@ func main() {
 		}
 	case "ECHO":
 		if len(os.Args) > 2 {
-			text := os.Args[2]
-			WriteStringToConn(conn, text)
+			ar := nesp.Array{}
+			serializedData, err := ar.SerializeArray(os.Args[2:])
+			if err != nil {
+				panic(errors.New("unable to serialize"))
+			}
+			conn.Write(serializedData)
 		} else {
-			fmt.Fprintln(os.Stderr, "Empty Echo Message")
-			return
+			panic(errors.New("empty Echo Message"))
 		}
 	default:
-		fmt.Fprintln(os.Stderr, "Unknown command")
-		return
+		panic(errors.New("unknown command"))
 	}
 	readedText := ReadStringFromConn(conn)
 	fmt.Println(readedText)

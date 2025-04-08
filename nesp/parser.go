@@ -16,23 +16,27 @@ func SerializeValue(val interface{}) ([]byte, error) {
 	}
 }
 
-func DeserializeValue(input []byte) (interface{}, error) {
+func DeserializeValue(input []byte) ([]string, error) {
 	if len(input) == 0 {
 		return nil, fmt.Errorf("empty input")
 	}
 
 	switch input[0] {
-	case '+':
+	case '+': // Simple String
 		ss := &SimpleString{}
 		err := ss.Deserialize(input)
-		return string(ss.Data), err
-	case '$':
+		return []string{ss.Data}, err
+
+	case '$': // Bulk String
 		bs := &BulkString{}
 		err := bs.Deserialize(input)
-		return string(bs.Data), err
-	case '*':
+		return []string{bs.Data}, err
+
+	case '*': // Array
 		arr := &Array{}
-		return arr.DeserializeArray(input)
+		val, err := arr.DeserializeArray(input)
+		return val, err
+
 	default:
 		return nil, fmt.Errorf("unknown NESP type: %c", input[0])
 	}

@@ -6,6 +6,9 @@ import (
 	"io"
 	"net"
 	"os"
+	"strings"
+
+	"github.com/iamAbhishekkumar/NexisDB/nesp"
 )
 
 func main() {
@@ -42,7 +45,7 @@ func handleConnection(conn net.Conn) {
 			return
 		}
 
-		cmdExecutor(buffer[:n])
+		cmdExecutor(conn, buffer[:n])
 	}
 }
 
@@ -50,7 +53,10 @@ func cmdExecutor(conn net.Conn, buf []byte) {
 	if bytes.Equal([]byte("*1\r\n+PING\r\n"), buf) {
 		pong := []byte("+PONG\r\n")
 		conn.Write(pong)
-	} else if bytes.Equal([]byte("ECHO")) {
-		// todo
+	} else {
+		val, _ := nesp.DeserializeValue(buf)
+		if val[0] == "ECHO" {
+			conn.Write([]byte(strings.Join(val[1:], " ") + "\r\n"))
+		}
 	}
 }

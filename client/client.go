@@ -28,14 +28,13 @@ func main() {
 	cmd := os.Args[1]
 	switch cmd {
 	case "PING":
-		_, err = conn.Write([]byte("*1\r\n$4\r\nPING\r\n"))
+		_, err = conn.Write([]byte("*1\r\n+PING\r\n"))
 		if err != nil {
 			fmt.Fprint(os.Stderr, "Failed to send the data")
 		}
 	case "ECHO":
 		if len(os.Args) > 2 {
-			ar := nesp.Array{}
-			serializedData, err := ar.SerializeArray(os.Args[2:])
+			serializedData, err := nesp.SerializeValue(os.Args[1:])
 			if err != nil {
 				panic(errors.New("unable to serialize"))
 			}
@@ -47,7 +46,7 @@ func main() {
 		panic(errors.New("unknown command"))
 	}
 	readedText := ReadStringFromConn(conn)
-	fmt.Println(readedText)
+	fmt.Print(readedText)
 
 }
 

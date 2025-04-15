@@ -1,4 +1,4 @@
-# NexisDB
+# Auralis
 A simple in memory database.
 
 ## What is RESP

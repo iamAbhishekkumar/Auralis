@@ -3,50 +3,86 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"net"
 	"os"
-	"strings"
 
-	"github.com/iamAbhishekkumar/NexisDB/nesp"
+	"golang.org/x/sys/unix"
 )
 
 func main() {
-	l, err := net.Listen("tcp", "0.0.0.0:6379")
+	ln, err := net.Listen("tcp", "0.0.0.0:8389")
 	if err != nil {
 		fmt.Fprint(os.Stderr, "Failed to bind to port 6379")
 		os.Exit(1)
 	}
+
+	// Extracting file desc
+	tcpLn := ln.(*net.TCPListener)
+	lnFile, _ := tcpLn.File()
+	listenFD := int(lnFile.Fd())
+	unix.SetNonblock(listenFD, true)
+
+	fmt.Println("Auralis started on port 8389")
 	fmt.Println("Started Accepting Conenctions......")
+
+	peers := make(map[int]net.Conn)
+
 	for {
-		c, err := l.Accept()
-		if err != nil {
-			fmt.Fprint(os.Stderr, "Error accepting connection: ", err.Error())
-			os.Exit(1)
+		// Prepare FD sets
+		readFDs := &unix.FdSet{}
+		readFDs.Set(listenFD)
+
+		maxFD := listenFD
+		for fd := range peers {
+			readFDs.Set(fd)
+			if fd > maxFD {
+				maxFD = fd
+			}
 		}
-		go handleConnection(c)
+
+		// Wait for activity
+		n, err := unix.Select(maxFD+1, readFDs, nil, nil, nil)
+		if err != nil {
+			fmt.Println("select err:", err)
+			continue
+		}
+		if n == 0 {
+			continue
+		}
+
+		// New connection?
+		if readFDs.IsSet(listenFD) {
+			conn, err := tcpLn.Accept()
+			if err == nil {
+				fd := getFD(conn)
+				unix.SetNonblock(fd, true)
+				peers[fd] = conn
+				fmt.Println("Accepted:", conn.RemoteAddr())
+			}
+		}
+
+		// Existing clients
+		for fd, conn := range peers {
+			if readFDs.IsSet(fd) {
+				buf := make([]byte, 1024)
+				n, err := conn.Read(buf)
+				if err != nil || n == 0 {
+					conn.Close()
+					delete(peers, fd)
+					fmt.Println("Disconnected:", fd)
+					continue
+				}
+				cmdExecutor(conn, buf[:n])
+			}
+		}
 	}
 
 }
 
-func handleConnection(conn net.Conn) {
-	defer conn.Close()
-	fmt.Println("Accepted Connection from ", conn.RemoteAddr())
-	buffer := make([]byte, 1024)
-	for {
-		// Read data from the client
-		n, err := conn.Read(buffer)
-		if err != nil {
-			if err == io.EOF {
-				fmt.Println("Client disconnected gracefully")
-			} else {
-				fmt.Fprintf(os.Stderr, "Error: %s", err)
-			}
-			return
-		}
-
-		cmdExecutor(conn, buffer[:n])
-	}
+func getFD(conn net.Conn) int {
+	tcpConn := conn.(*net.TCPConn)
+	file, _ := tcpConn.File()
+	return int(file.Fd())
 }
 
 func cmdExecutor(conn net.Conn, buf []byte) {
@@ -54,9 +90,10 @@ func cmdExecutor(conn net.Conn, buf []byte) {
 		pong := []byte("+PONG\r\n")
 		conn.Write(pong)
 	} else {
-		val, _ := nesp.DeserializeValue(buf)
-		if val[0] == "ECHO" {
-			conn.Write([]byte(strings.Join(val[1:], " ") + "\r\n"))
-		}
+		conn.Write([]byte("-ERR unknown command\r\n"))
 	}
+}
+
+func greetMessage() {
+
 }

@@ -38,3 +38,18 @@ func ServerInfo(mode string, pid int, port int) {
 	fmt.Printf("╰──────────────────────────────────────────────╯\n")
 	fmt.Println("\033[32m[OK]\033[0m Ready to accept connections")
 }
+
+func InfoLog(text ...any) {
+	fmt.Print("\033[32m[INFO]\033[0m ")
+	fmt.Println(text...)
+}
+
+func ErrorLog(text ...any) {
+	fmt.Print("\033[31m[ERROR]\033[0m ")
+	fmt.Println(text...)
+}
+
+func DebugLog(text ...any) {
+	fmt.Print("\033[33m[DEBUG]\033[0m ")
+	fmt.Println(text...)
+}

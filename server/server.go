@@ -61,7 +61,7 @@ func main() {
 				fd := getFD(conn)
 				unix.SetNonblock(fd, true)
 				peers[fd] = conn
-				fmt.Println("Accepted:", conn.RemoteAddr())
+				common.InfoLog("Accepted connection from : ", conn.RemoteAddr())
 			}
 		}
 
@@ -73,7 +73,8 @@ func main() {
 				if err != nil || n == 0 {
 					conn.Close()
 					delete(peers, fd)
-					fmt.Println("Disconnected:", fd)
+					common.InfoLog("Disconnected connection from : ", conn.RemoteAddr())
+					common.DebugLog("Asscoiated Fd : ", fd)
 					continue
 				}
 				cmdExecutor(conn, buf[:n])

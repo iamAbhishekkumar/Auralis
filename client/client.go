@@ -73,3 +73,7 @@ package main
 // 	slog.Debug("successful read from server:")
 // 	return response
 // }
+
+func main() {
+
+}

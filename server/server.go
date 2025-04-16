@@ -6,11 +6,15 @@ import (
 	"net"
 	"os"
 
+	"github.com/iamAbhishekkumar/Auralis/common"
 	"golang.org/x/sys/unix"
 )
 
 func main() {
-	ln, err := net.Listen("tcp", "0.0.0.0:8389")
+	const port int = 8389
+	const mode string = "Standalone"
+
+	ln, err := net.Listen("tcp", "0.0.0.0:"+fmt.Sprint(port))
 	if err != nil {
 		fmt.Fprint(os.Stderr, "Failed to bind to port 6379")
 		os.Exit(1)
@@ -22,8 +26,8 @@ func main() {
 	listenFD := int(lnFile.Fd())
 	unix.SetNonblock(listenFD, true)
 
-	fmt.Println("Auralis started on port 8389")
-	fmt.Println("Started Accepting Conenctions......")
+	common.ServerGreetMessage()
+	common.ServerInfo(mode, os.Getpid(), port)
 
 	peers := make(map[int]net.Conn)
 
@@ -92,8 +96,4 @@ func cmdExecutor(conn net.Conn, buf []byte) {
 	} else {
 		conn.Write([]byte("-ERR unknown command\r\n"))
 	}
-}
-
-func greetMessage() {
-
 }

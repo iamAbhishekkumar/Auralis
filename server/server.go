@@ -1,12 +1,11 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"net"
 	"os"
 
-	"github.com/iamAbhishekkumar/Auralis/common"
+	cm "github.com/iamAbhishekkumar/Auralis/common"
 	"golang.org/x/sys/unix"
 )
 
@@ -26,8 +25,8 @@ func main() {
 	listenFD := int(lnFile.Fd())
 	unix.SetNonblock(listenFD, true)
 
-	common.ServerGreetMessage()
-	common.ServerInfo(mode, os.Getpid(), port)
+	cm.ServerGreetMessage()
+	cm.ServerInfo(mode, os.Getpid(), port)
 
 	peers := make(map[int]net.Conn)
 
@@ -61,40 +60,35 @@ func main() {
 				fd := getFD(conn)
 				unix.SetNonblock(fd, true)
 				peers[fd] = conn
-				common.InfoLog("Accepted connection from : ", conn.RemoteAddr())
+				cm.InfoLog("Accepted connection from : ", conn.RemoteAddr())
 			}
 		}
 
 		// Existing clients
 		for fd, conn := range peers {
 			if readFDs.IsSet(fd) {
-				buf := make([]byte, 1024)
-				n, err := conn.Read(buf)
-				if err != nil || n == 0 {
+				resp := cm.NewResp(conn)
+				value, err := resp.Read()
+				if err != nil {
 					conn.Close()
 					delete(peers, fd)
-					common.InfoLog("Disconnected connection from : ", conn.RemoteAddr())
-					common.DebugLog("Asscoiated Fd : ", fd)
+					cm.InfoLog("Disconnected connection from : ", conn.RemoteAddr())
+					cm.DebugLog("Asscoiated Fd : ", fd)
 					continue
 				}
-				cmdExecutor(conn, buf[:n])
+
+				_ = value
+
+				writer := cm.NewWriter(conn)
+				writer.Write(cm.ValueType{Typ: "string", Str: "OK"})
 			}
+
 		}
 	}
-
 }
 
 func getFD(conn net.Conn) int {
 	tcpConn := conn.(*net.TCPConn)
 	file, _ := tcpConn.File()
 	return int(file.Fd())
-}
-
-func cmdExecutor(conn net.Conn, buf []byte) {
-	if bytes.Equal([]byte("*1\r\n+PING\r\n"), buf) {
-		pong := []byte("+PONG\r\n")
-		conn.Write(pong)
-	} else {
-		conn.Write([]byte("-ERR unknown command\r\n"))
-	}
 }

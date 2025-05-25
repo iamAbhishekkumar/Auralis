@@ -2,7 +2,7 @@
 #include "server.hpp"
 
 int main() {
-    const int port = 63798;
+    const int port = 7389;
     const std::string mode = "Standalone";
 
     printLogo();

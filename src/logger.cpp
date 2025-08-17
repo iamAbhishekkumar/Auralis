@@ -21,13 +21,3 @@ void printServerInfo(const std::string& mode, int port) {
     std::cout << "╰────────────────────────────╯\n";
     std::cout << "[OK] Ready to accept connections\n";
 }
-
-void info(const std::string& msg, int val) {
-    std::cout << CYAN << "[INFO] " << msg;
-    if (val != -1) std::cout << " " << val;
-    std::cout << "\n";
-}
-
-void error(const std::string& msg) {
-    std::cerr << RED << "[ERROR] " << msg << "\n";
-}

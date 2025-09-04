@@ -3,6 +3,8 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
-void startServer(int port);
+#include <string>
+
+void startServer(int port, const std::string& aofPath);
 
 #endif  // SERVER_HPP

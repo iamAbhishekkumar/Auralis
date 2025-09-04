@@ -15,3 +15,5 @@ docker build -t auralis_db .
 ```bash
 docker run -it --rm -p 7389:7389 auralis_db
 ```
+
+## How to use
